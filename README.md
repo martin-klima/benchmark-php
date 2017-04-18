@@ -8,10 +8,19 @@ an www.webdesign-informatik.de. Forked from https://github.com/odan/benchmark-ph
 I extended scripts by filesystem tests (create, read from, rename and delete many files).
 It can be useful for testing performance of Vagrant filesystem in a synced folders. 
 
-# Setup
+# Use
 
 Upload benchmark.php an execute it:<br>
 http://www.example.com/benchmark.php
+
+# Setup (optional)
+
+If you need, you can set the hardness of the tests in the COUNTS constant.
+
+```php
+define('COUNTS', 100000);
+```
+
 
 
 # MySQL Setup (optional)
@@ -37,22 +46,26 @@ Results are displayed as array, for example:
         [version] => 1.2
         [sysinfo] => Array
             (
-                [time] => 2017-04-18 08:17:06
+                [time] => 2017-04-18 09:32:42
                 [php_version] => 7.0.11
                 [platform] => WINNT
             )
     
         [benchmark] => Array
             (
-                [math] => 0.316
-                [string] => 2.300
-                [loops] => 0.025
+                [math] => 0.255
+                [string] => 2.252
+                [loops] => 0.024
                 [ifelse] => 0.038
-                [fs-create] => 4.018
-                [fs-read] => 5.865
-                [fs-rename] => 10.454
-                [fs-delete] => 11.903
+                [fs-operation] => Array
+                    (
+                        [create] => 4.898
+                        [read] => 1.767
+                        [rename] => 4.362
+                        [delete] => 2.203
+                        [total] => 13.230
+                    )
+                [filesystem] => 13.230
             )
-    
-        [total] => 14.587
+        [total] => 15.801
     )

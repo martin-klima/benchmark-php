@@ -30,7 +30,7 @@ if (is_readable('config.php')) {
 }
 $benchmarkResult = test_benchmark($options);
 // check performance
-print("Results:\n");
+print("Results in seconds:\n");
 print_r($benchmarkResult);
 
 exit;
@@ -147,7 +147,7 @@ function test_ifelse(&$result, $count = COUNTS) {
 }
 
 function test_filesystem(&$result, $count = COUNTS) {
-  $timeStart = microtime(TRUE);
+  $timeStart0 = microtime(TRUE);
   // Create a test file.
   $tmp_file_name = 'benchmark.tmp';
   file_put_contents($tmp_file_name, '0123456789');
@@ -156,7 +156,7 @@ function test_filesystem(&$result, $count = COUNTS) {
   for ($i = 0; $i < $count; $i++) {
     file_put_contents($i . '-' . $tmp_file_name, $tmp);
   }
-  $result['benchmark']['fs-create'] = timer_diff($timeStart);
+  $result['benchmark']['fs-operation']['create'] = timer_diff($timeStart0);
 
   // Read from many files.
   $timeStart = microtime(TRUE);
@@ -164,14 +164,14 @@ function test_filesystem(&$result, $count = COUNTS) {
   for ($i = 0; $i < $count; $i++) {
     $tmp .= file_get_contents($i . '-' . $tmp_file_name);
   }
-  $result['benchmark']['fs-read'] = timer_diff($timeStart);
+  $result['benchmark']['fs-operation']['read'] = timer_diff($timeStart);
 
   // Rename files.
   $timeStart = microtime(TRUE);
   for ($i = 0; $i < $count; $i++) {
     rename($i . '-' . $tmp_file_name, $i . '-renamed-' . $tmp_file_name);
   }
-  $result['benchmark']['fs-rename'] = timer_diff($timeStart);
+  $result['benchmark']['fs-operation']['rename'] = timer_diff($timeStart);
 
   // Delete many files.
   $timeStart = microtime(TRUE);
@@ -179,7 +179,9 @@ function test_filesystem(&$result, $count = COUNTS) {
     unlink($i . '-renamed-' . $tmp_file_name);
   }
   unlink('benchmark.tmp');
-  $result['benchmark']['fs-delete'] = timer_diff($timeStart);
+  $result['benchmark']['filesystem'] = timer_diff($timeStart0);
+  $result['benchmark']['fs-operation']['delete'] = timer_diff($timeStart);
+  $result['benchmark']['fs-operation']['total'] = timer_diff($timeStart0);
 }
 
 function test_mysql(&$result, $settings) {
