@@ -6,12 +6,20 @@ and MySQL. This project is inspired by www.php-benchmark-script.com (Alessandro 
 an www.webdesign-informatik.de. Forked from https://github.com/odan/benchmark-php.
 
 I extended scripts by filesystem tests (create, read from, rename and delete many files).
-It can be useful for testing performance of Vagrant filesystem in a synced folders. 
+It can be useful for testing performance of Vagrant filesystem in a synced folders.
+
+Filesystem tests contains these operations:
+- create 10k small files
+- read content from 10k small files
+- rename 10k files
+- delete 10k files
 
 # Use
 
-Upload benchmark.php an execute it:<br>
+Clone/Upload benchmark.php an execute it:
 http://www.example.com/benchmark.php
+
+Note: Filesystem test needs to be in directory with read/write permission.
 
 # Setup (optional)
 
