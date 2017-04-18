@@ -157,7 +157,9 @@ function test_filesystem(&$result, $count = COUNTS) {
     file_put_contents($i . '-' . $tmp_file_name, $tmp);
   }
   $result['benchmark']['fs-create'] = timer_diff($timeStart);
+
   // Read from many files.
+  $timeStart = microtime(TRUE);
   $tmp = '';
   for ($i = 0; $i < $count; $i++) {
     $tmp .= file_get_contents($i . '-' . $tmp_file_name);
@@ -165,12 +167,14 @@ function test_filesystem(&$result, $count = COUNTS) {
   $result['benchmark']['fs-read'] = timer_diff($timeStart);
 
   // Rename files.
+  $timeStart = microtime(TRUE);
   for ($i = 0; $i < $count; $i++) {
     rename($i . '-' . $tmp_file_name, $i . '-renamed-' . $tmp_file_name);
   }
   $result['benchmark']['fs-rename'] = timer_diff($timeStart);
 
   // Delete many files.
+  $timeStart = microtime(TRUE);
   for ($i = 0; $i < $count; $i++) {
     unlink($i . '-renamed-' . $tmp_file_name);
   }
