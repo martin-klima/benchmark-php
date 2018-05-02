@@ -19,19 +19,46 @@
 set_time_limit(360); // 6 minutes
 define('COUNTS', 100000);
 
-$options = array();
+$options = [];
 
 // -----------------------------------------------------------------------------
 // Main
 // -----------------------------------------------------------------------------
 // Get config if exists.
-if (is_readable('config.php')) {
+/*if (is_readable('config.php')) {
   include('config.php');
+}*/
+while (ob_get_level()) {
+  ob_end_clean();
 }
+ob_start();
+header("Content-Encoding: None", TRUE);
+header("Content-Type: text/plain");
+print('Benchmark is running... wait for results.');
+ob_end_flush();
+flush();
+
 $benchmarkResult = test_benchmark($options);
 // check performance
-print("Results in seconds:\n");
+print("\nResults are in seconds:\n");
 print_r($benchmarkResult);
+
+print("Table formatted results\n");
+print("\nSystem info\n");
+print(implode('|', array_keys($benchmarkResult['sysinfo'])));
+print("\n");
+print(implode('|', $benchmarkResult['sysinfo']));
+print("\n\nBenchmark PHP\n");
+print(implode('|', array_keys($benchmarkResult['benchmark'])));
+print("\n");
+print(implode('|', $benchmarkResult['benchmark']));
+print("\n\nBenchmark filesystem for " . COUNTS . " files\n");
+print(implode('|', array_keys($benchmarkResult['benchmark_fs'])));
+print("\n");
+print(implode('|', $benchmarkResult['benchmark_fs']));
+print("\n\nTotal\n");
+print($benchmarkResult['total']);
+print("\n");
 
 exit;
 
@@ -42,23 +69,21 @@ exit;
 function test_benchmark($settings) {
   $timeStart = microtime(TRUE);
 
-  $result = array();
-  $result['version'] = '1.2';
+  $result = [];
+  $result['version'] = '1.21';
+  $result['counts'] = COUNTS;
   $result['sysinfo']['time'] = date("Y-m-d H:i:s");
   $result['sysinfo']['php_version'] = PHP_VERSION;
   $result['sysinfo']['platform'] = PHP_OS;
 
-  test_math($result, COUNTS);
-  test_string($result, COUNTS);
-  test_loops($result, COUNTS * 10);
-  test_ifelse($result, COUNTS * 10);
+  test_math($result, COUNTS * 5);
+  test_string($result, COUNTS * 5);
+  test_loops($result, COUNTS / 20);
+  test_ifelse($result, COUNTS * 100);
+  test_rand_array($result, COUNTS * 2);
+  $result['benchmark']['total'] = timer_diff($timeStart);
+
   test_filesystem($result, COUNTS / 10);
-  if (isset($settings['db.host'])) {
-    test_mysql($result, $settings);
-  }
-  else {
-    print "Copy example.config.php to config.php and set MySQL configuration for test MySQL. \n";
-  }
 
   $result['total'] = timer_diff($timeStart);
   return $result;
@@ -67,7 +92,7 @@ function test_benchmark($settings) {
 function test_math(&$result, $count = COUNTS) {
   $timeStart = microtime(TRUE);
 
-  $mathFunctions = array(
+  $mathFunctions = [
     "abs",
     "acos",
     "asin",
@@ -80,11 +105,11 @@ function test_math(&$result, $count = COUNTS) {
     "pi",
     "is_finite",
     "is_nan",
-    "sqrt"
-  );
+    "sqrt",
+  ];
   for ($i = 0; $i < $count; $i++) {
     foreach ($mathFunctions as $function) {
-      call_user_func_array($function, array($i));
+      $mathResult = call_user_func_array($function, [$i]);
     }
   }
   $result['benchmark']['math'] = timer_diff($timeStart);
@@ -92,7 +117,7 @@ function test_math(&$result, $count = COUNTS) {
 
 function test_string(&$result, $count = COUNTS) {
   $timeStart = microtime(TRUE);
-  $stringFunctions = array(
+  $stringFunctions = [
     "addslashes",
     "chunk_split",
     "metaphone",
@@ -104,13 +129,13 @@ function test_string(&$result, $count = COUNTS) {
     "strrev",
     "strlen",
     "soundex",
-    "ord"
-  );
+    "ord",
+  ];
 
   $string = 'the quick brown fox jumps over the lazy dog';
   for ($i = 0; $i < $count; $i++) {
     foreach ($stringFunctions as $function) {
-      call_user_func_array($function, array($string));
+      $mathResult = call_user_func_array($function, [$string . $i]);
     }
   }
   $result['benchmark']['string'] = timer_diff($timeStart);
@@ -118,8 +143,11 @@ function test_string(&$result, $count = COUNTS) {
 
 function test_loops(&$result, $count = COUNTS) {
   $timeStart = microtime(TRUE);
+  $var = 0;
   for ($i = 0; $i < $count; ++$i) {
-
+    for ($y = 0; $y < $count; ++$y) {
+      $var += $i - $y;
+    }
   }
   $i = 0;
   while ($i < $count) {
@@ -130,20 +158,39 @@ function test_loops(&$result, $count = COUNTS) {
 
 function test_ifelse(&$result, $count = COUNTS) {
   $timeStart = microtime(TRUE);
+  $tmp = 0;
   for ($i = 0; $i < $count; $i++) {
-    if ($i == -1) {
-
+    if ($i % 2 == 0) {
+      $tmp += 1;
     }
-    elseif ($i == -2) {
-
+    elseif ($i % 3 == 0) {
+      $tmp += 2;
+    }
+    elseif ($i % 5 == 0) {
+      $tmp += 3;
     }
     else {
-      if ($i == -3) {
-
-      }
+      $tmp += 0;
     }
   }
   $result['benchmark']['ifelse'] = timer_diff($timeStart);
+}
+
+function test_rand_array(&$result, $count = COUNTS) {
+  $timeStart = microtime(TRUE);
+  for ($ii = 0; $ii < 5; $ii++) {
+    $testArray = [];
+    for ($i = 0; $i < $count; $i++) {
+      $rnd = mt_rand(-999999, 999999);
+      $testArray[] = $rnd;
+    }
+
+    $uniqueArray = array_unique($testArray);
+    $sum = array_sum($testArray);
+    $tmp = array_flip($testArray);
+    unset($testArray, $sum, $tmp);
+  }
+  $result['benchmark']['rand_array'] = timer_diff($timeStart);
 }
 
 function test_filesystem(&$result, $count = COUNTS) {
@@ -154,9 +201,9 @@ function test_filesystem(&$result, $count = COUNTS) {
   $tmp = file_get_contents($tmp_file_name);
   // Create many files;
   for ($i = 0; $i < $count; $i++) {
-    file_put_contents($i . '-' . $tmp_file_name, $tmp);
+    file_put_contents($i . '-' . $tmp_file_name, $tmp . $i);
   }
-  $result['benchmark']['fs-operation']['create'] = timer_diff($timeStart0);
+  $result['benchmark_fs']['create'] = timer_diff($timeStart0);
 
   // Read from many files.
   $timeStart = microtime(TRUE);
@@ -164,14 +211,14 @@ function test_filesystem(&$result, $count = COUNTS) {
   for ($i = 0; $i < $count; $i++) {
     $tmp .= file_get_contents($i . '-' . $tmp_file_name);
   }
-  $result['benchmark']['fs-operation']['read'] = timer_diff($timeStart);
+  $result['benchmark_fs']['read'] = timer_diff($timeStart);
 
   // Rename files.
   $timeStart = microtime(TRUE);
   for ($i = 0; $i < $count; $i++) {
     rename($i . '-' . $tmp_file_name, $i . '-renamed-' . $tmp_file_name);
   }
-  $result['benchmark']['fs-operation']['rename'] = timer_diff($timeStart);
+  $result['benchmark_fs']['rename'] = timer_diff($timeStart);
 
   // Delete many files.
   $timeStart = microtime(TRUE);
@@ -179,33 +226,8 @@ function test_filesystem(&$result, $count = COUNTS) {
     unlink($i . '-renamed-' . $tmp_file_name);
   }
   unlink('benchmark.tmp');
-  $result['benchmark']['filesystem'] = timer_diff($timeStart0);
-  $result['benchmark']['fs-operation']['delete'] = timer_diff($timeStart);
-  $result['benchmark']['fs-operation']['total'] = timer_diff($timeStart0);
-}
-
-function test_mysql(&$result, $settings) {
-  $timeStart = microtime(TRUE);
-
-  $link = mysqli_connect($settings['db.host'], $settings['db.user'], $settings['db.pw']);
-  $result['benchmark']['mysql']['connect'] = timer_diff($timeStart);
-
-  mysqli_select_db($link, $settings['db.name']);
-  $result['benchmark']['mysql']['select_db'] = timer_diff($timeStart);
-
-  $dbResult = mysqli_query($link, 'SELECT VERSION() as version;');
-  $arr_row = mysqli_fetch_array($dbResult);
-  $result['sysinfo']['mysql_version'] = $arr_row['version'];
-  $result['benchmark']['mysql']['query_version'] = timer_diff($timeStart);
-
-  $query = "SELECT BENCHMARK(1000000,ENCODE('hello',RAND()));";
-  $dbResult = mysqli_query($link, $query);
-  $result['benchmark']['mysql']['query_benchmark'] = timer_diff($timeStart);
-
-  mysqli_close($link);
-
-  $result['benchmark']['mysql']['total'] = timer_diff($timeStart);
-  return $result;
+  $result['benchmark_fs']['delete'] = timer_diff($timeStart);
+  $result['benchmark_fs']['total'] = timer_diff($timeStart0);
 }
 
 function timer_diff($timeStart) {
