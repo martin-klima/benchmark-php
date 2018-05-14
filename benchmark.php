@@ -58,6 +58,12 @@ print("\n");
 print(implode('|', $benchmarkResult['benchmark_fs']));
 print("\n\nTotal\n");
 print($benchmarkResult['total']);
+print("\n\nOutput for Copy&Paste to Google Sheets:\n");
+print("[YOUR-NAME]\t[SERVER-CONFIG]\t" . $benchmarkResult['sysinfo']['php_version'] .
+    "\t[PLATFORM]\t" .
+    str_replace(".", ",", implode("\t", $benchmarkResult['benchmark'])) . "\t" .
+    str_replace(".", ",", implode("\t", $benchmarkResult['benchmark_fs'])) . "\t" .
+    str_replace(".", ",", $benchmarkResult['total']) . "\n");
 print("\n");
 
 exit;
